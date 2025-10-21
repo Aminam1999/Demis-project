@@ -10,6 +10,8 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.model_selection import GridSearchCV
+from xgboost import XGBRegressor
 
 data = pd.read_csv('housePrice.csv')
 data.head()
@@ -94,3 +96,33 @@ r2_xgb = r2_score(y_test, y_pred_xgb)
 print(f'RMSE: {rmse_xgb}')
 print(f'MAE: {mae_xgb}')
 print(f'R²: {r2_xgb}')
+
+xgb_model = XGBRegressor(objective='reg:squarederror')
+param_grid = {
+    'max_depth': [3, 6, 9],
+    'learning_rate': [0.01, 0.1, 0.2],
+    'n_estimators': [50, 100, 200]
+}
+
+grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3)
+grid_search.fit(X_train, y_train)
+
+best_params = grid_search.best_params_
+print(f'Best Parameters: {best_params}')
+
+best_model = grid_search.best_estimator_
+y_pred_best = best_model.predict(X_test)
+
+rmse_best = np.sqrt(mean_squared_error(y_test, y_pred_best))
+mae_best = mean_absolute_error(y_test, y_pred_best)
+r2_best = r2_score(y_test, y_pred_best)
+
+print(f'Optimized RMSE: {rmse_best}')
+print(f'Optimized MAE: {mae_best}')
+print(f'Optimized R²: {r2_best}')
+
+import joblib
+
+# ذخیره مدل با joblib
+joblib.dump(xgb_model, 'house_price_prediction/xgboost_model.joblib')
+
